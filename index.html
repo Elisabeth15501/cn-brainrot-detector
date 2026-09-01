@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>烂梗侦测器 · 测测你的小红书有几分网感</title>
+<style>
+  :root{
+    --xhs-red:#ff2442;
+    --xhs-red-soft:#ffe8ec;
+    --ink:#1f1f24;
+    --ink-soft:#6b6b76;
+    --line:#ececf0;
+    --bg:#faf7f8;
+    --card:#ffffff;
+    --ok:#1faa6b;
+    --warn:#f0a020;
+    --bad:#e0463e;
+    --radius:18px;
+    --shadow:0 8px 30px rgba(31,31,36,.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{height:100%;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    padding:132px 16px 60px;
+  }
+  .wrap{max-width:680px;margin:0 auto}
+  header{text-align:center;margin-bottom:22px}
+  header h1{font-size:26px;letter-spacing:.5px}
+  header h1 .em{color:var(--xhs-red)}
+  header p{color:var(--ink-soft);font-size:14px;margin-top:6px}
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:20px;
+    margin-bottom:18px;
+  }
+
+  label.field-label{display:block;font-size:13px;color:var(--ink-soft);margin-bottom:8px;font-weight:600}
+  textarea{
+    width:100%;
+    min-height:150px;
+    resize:vertical;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:14px;
+    font-size:15px;
+    font-family:inherit;
+    color:var(--ink);
+    background:#fff;
+    outline:none;
+    transition:border-color .15s;
+  }
+  textarea:focus{border-color:var(--xhs-red)}
+
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  button{
+    border:none;
+    border-radius:999px;
+    padding:11px 20px;
+    font-size:14px;
+    font-weight:700;
+    cursor:pointer;
+    font-family:inherit;
+    transition:transform .08s, opacity .15s;
+  }
+  button:active{transform:scale(.97)}
+  .btn-primary{background:var(--xhs-red);color:#fff}
+  .btn-ghost{background:var(--xhs-red-soft);color:var(--xhs-red)}
+  .btn-line{background:#f3f3f6;color:var(--ink-soft)}
+
+  .result{display:none}
+  .result.show{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  .score-box{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+  .gauge{
+    --p:0;
+    width:120px;height:120px;border-radius:50%;
+    background:conic-gradient(var(--xhs-red) calc(var(--p)*1%), #f0f0f3 0);
+    display:grid;place-items:center;flex:0 0 auto;position:relative;
+  }
+  .gauge::after{content:"";position:absolute;inset:12px;background:#fff;border-radius:50%}
+  .gauge .num{position:relative;font-size:30px;font-weight:800;z-index:1}
+  .gauge .num small{font-size:13px;font-weight:600;color:var(--ink-soft)}
+  .tier-box{flex:1;min-width:180px}
+  .tier{display:inline-block;background:var(--xhs-red);color:#fff;font-size:13px;font-weight:700;padding:5px 12px;border-radius:999px}
+  .tier.t0{background:#2a2a30}
+  .tier.t1{background:var(--ok)}
+  .tier.t2{background:var(--warn)}
+  .tier.t3{background:#e0802e}
+  .tier.t4{background:var(--bad)}
+  .tier-desc{color:var(--ink-soft);font-size:13px;margin-top:8px}
+
+  .stat-row{display:flex;gap:12px;margin:18px 0;flex-wrap:wrap}
+  .stat{flex:1;min-width:120px;background:#faf7f8;border:1px solid var(--line);border-radius:14px;padding:12px 14px;text-align:center}
+  .stat b{display:block;font-size:22px;font-weight:800}
+  .stat span{font-size:12px;color:var(--ink-soft)}
+
+  .list-title{font-size:14px;font-weight:700;margin:6px 0 12px;display:flex;align-items:center;gap:8px}
+  .list-title .dot{width:8px;height:8px;border-radius:50%;background:var(--xhs-red)}
+  .item{display:flex;gap:12px;padding:12px 0;border-bottom:1px dashed var(--line);align-items:flex-start}
+  .item:last-child{border-bottom:none}
+  .badge{flex:0 0 auto;background:var(--xhs-red-soft);color:var(--xhs-red);font-weight:800;font-size:13px;border-radius:8px;padding:3px 9px;min-width:34px;text-align:center}
+  .item-main{flex:1}
+  .item-term{font-weight:700;font-size:15px}
+  .item-term .arrow{color:var(--ink-soft);font-weight:400;margin:0 6px}
+  .item-term .proper{color:var(--ok);font-weight:700}
+  .item-note{font-size:12.5px;color:var(--ink-soft);margin-top:3px}
+  .item-fixes{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .fix{font-size:12.5px;border-radius:8px;padding:3px 10px;font-weight:600;line-height:1.5}
+  .fix b{font-weight:800;margin-right:4px;font-size:11px;opacity:.85}
+  .fix-daily{background:#e8f5ee;color:#1faa6b}
+  .fix-elegant{background:#ececfb;color:#5b5bd6}
+  .empty{text-align:center;color:var(--ink-soft);padding:26px 10px;font-size:14px}
+  .amb-tag{display:inline-block;font-size:10.5px;font-weight:700;color:#e0802e;background:#fdf3e3;border:1px solid #f5dfb8;border-radius:6px;padding:1px 6px;margin-left:6px;vertical-align:2px}
+
+  .report{
+    width:100%;min-height:90px;margin-top:6px;border:1px dashed var(--line);border-radius:12px;
+    padding:12px;font-size:13px;color:var(--ink);background:#fff;resize:vertical;font-family:inherit;
+  }
+  .footer-note{text-align:center;color:var(--ink-soft);font-size:12px;margin-top:8px}
+  .toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%) translateY(20px);background:#2a2a30;color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:.25s;z-index:99}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .img-card{display:none}
+  .img-card.show{display:block;margin-top:14px}
+  .img-card canvas{width:100%;max-width:330px;height:auto;border-radius:14px;box-shadow:var(--shadow);display:block;margin:0 auto;background:#fff}
+  .img-tip{text-align:center;font-size:12px;color:var(--ink-soft);margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>烂梗<span class="em">侦测器</span></h1>
+    <p>测测你的小红书文案有几分「网感」 · 纯娱乐，一个字都不会改你 🫶</p>
+  </header>
+
+  <div class="card">
+    <label class="field-label" for="input">把你的小红书文案粘贴进来（多篇也行）</label>
+    <textarea id="input" placeholder="例如：家人们谁懂啊，这家店真的绝绝子，氛围感直接拉满，本打工人表示泰裤辣，已经上头了， yyds！"></textarea>
+    <div class="btn-row">
+      <button class="btn-primary" id="detectBtn">开始检测</button>
+      <button class="btn-ghost" id="sampleBtn">填入示例</button>
+      <button class="btn-line" id="clearBtn">清空</button>
+    </div>
+  </div>
+
+  <div class="card result" id="result">
+    <div class="score-box">
+      <div class="gauge" id="gauge"><div class="num" id="concNum">0<small>%</small></div></div>
+      <div class="tier-box">
+        <span class="tier t0" id="tier">纯净人类</span>
+        <div class="tier-desc" id="tierDesc"></div>
+      </div>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat"><b id="statTotal">0</b><span>烂梗总出现次数</span></div>
+      <div class="stat"><b id="statKinds">0</b><span>涉及种类</span></div>
+      <div class="stat"><b id="statChars">0</b><span>检测字数</span></div>
+    </div>
+
+    <div class="list-title"><span class="dot"></span>命中的烂梗（按出现次数排序）</div>
+    <div id="list"></div>
+
+    <div class="list-title" style="margin-top:18px"><span class="dot"></span>可分享的「体检报告」</div>
+    <textarea class="report" id="report" readonly></textarea>
+    <div class="btn-row">
+      <button class="btn-ghost" id="copyBtn">复制报告</button>
+      <button class="btn-line" id="rewordBtn">换一句</button>
+      <button class="btn-primary" id="imgBtn">生成分享图</button>
+    </div>
+    <div class="img-card" id="imgCard">
+      <canvas id="shareCanvas"></canvas>
+      <div class="img-tip">长按图片可保存到相册 · 或点「保存图片」存到相册</div>
+      <div class="btn-row" style="justify-content:center;margin-top:10px">
+        <button class="btn-ghost" id="saveBtn">保存图片</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-note">纯关键词娱乐统计，不解析语义 · 语境词（本义≠网络义）会尽量识别 · 全部本地计算，文案不会上传任何服务器</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="./app.js"></script>
+</body>
+</html>
